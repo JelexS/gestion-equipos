@@ -46,6 +46,13 @@ export const useAuthStore = defineStore('auth', () => {
         throw new Error('Usuario inactivo')
       }
 
+      // Guardar usuario en el store y localStorage
+      const userToSave = {
+        ...foundUser,
+        password: undefined // Por seguridad, no almacenamos la contraseña
+      }
+      user.value = userToSave
+      localStorage.setItem('uleam_user', JSON.stringify(userToSave))
 
       return true
     } catch (error) {

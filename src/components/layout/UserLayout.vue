@@ -1,0 +1,335 @@
+<template>
+  <div class="user-layout">
+    <!-- Navegación Superior -->
+    <nav class="top-nav">
+      <div class="logo-container">
+        <img src="/img/logo-uleam.png" alt="Logo ULEAM" class="logo">
+        <span class="logo-text">Sistema de Inventario - Usuario</span>
+      </div>
+      
+      <div class="user-menu">
+        <div class="user-info">
+          <span class="user-name">{{ authStore.user?.nombres }} {{ authStore.user?.apellidos }}</span>
+          <span class="user-role">{{ getRoleName(authStore.user?.rol) }}</span>
+        </div>
+        <div class="user-avatar">{{ userInitial }}</div>
+        <button class="logout-btn" @click="handleLogout">
+          <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+        </button>
+      </div>
+    </nav>
+
+    <!-- Panel Lateral Simplificado -->
+    <aside class="sidebar">
+      <div class="menu-title">Menú Principal</div>
+      <router-link to="/inventario-usuario" class="menu-item" active-class="active">
+        <i class="fas fa-laptop"></i> Mi Inventario
+      </router-link>
+      
+      <div class="menu-title">Equipos</div>
+      <router-link to="/equipos/lista" class="menu-item" active-class="active">
+        <i class="fas fa-list"></i> Ver Equipos
+      </router-link>
+      
+      <div class="menu-title">Mi Perfil</div>
+      <a href="#" class="menu-item" @click.prevent="showProfile">
+        <i class="fas fa-user"></i> Ver Perfil
+      </a>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+      <slot />
+    </main>
+
+    <!-- Modal de Perfil -->
+    <div v-if="showProfileModal" class="modal-overlay" @click="closeProfile">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3><i class="fas fa-user"></i> Mi Perfil</h3>
+          <button class="close-btn" @click="closeProfile">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="profile-info">
+            <div class="info-group">
+              <label>Nombre Completo:</label>
+              <span>{{ authStore.user?.nombres }} {{ authStore.user?.apellidos }}</span>
+            </div>
+            <div class="info-group">
+              <label>Correo:</label>
+              <span>{{ authStore.user?.email }}</span>
+            </div>
+            <div class="info-group">
+              <label>Rol:</label>
+              <span>{{ getRoleName(authStore.user?.rol) }}</span>
+            </div>
+            <div class="info-group">
+              <label>Facultad:</label>
+              <span>{{ authStore.user?.facultad || 'No asignada' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+const showProfileModal = ref(false)
+
+const userInitial = computed(() => {
+  return authStore.user?.nombres?.charAt(0)?.toUpperCase() || 'U'
+})
+
+const handleLogout = () => {
+  authStore.logout()
+  router.push('/login')
+}
+
+const showProfile = () => {
+  showProfileModal.value = true
+}
+
+const closeProfile = () => {
+  showProfileModal.value = false
+}
+
+const getRoleName = (rol) => {
+  const roles = {
+    admin: 'Administrador',
+    tecnico: 'Técnico',
+    docente: 'Docente',
+    invitado: 'Invitado'
+  }
+  return roles[rol] || 'Usuario'
+}
+</script>
+
+<style scoped>
+.user-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Navbar Superior */
+.top-nav {
+  background-color: rgb(107, 202, 191);
+  height: 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: fixed;
+  width: 100%;
+  top: 0;
+  z-index: 100;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  height: 40px;
+  margin-right: 10px;
+}
+
+.logo-text {
+  font-weight: 600;
+  color: var(--secondary);
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--secondary);
+  font-size: 14px;
+}
+
+.user-role {
+  font-size: 12px;
+  color: var(--text-light);
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+  color: var(--primary);
+  background-color: rgba(42, 157, 143, 0.1);
+}
+
+/* Panel Lateral */
+.sidebar {
+  width: 250px;
+  background-color: white;
+  position: fixed;
+  height: 100%;
+  top: 60px;
+  left: 0;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+  padding: 20px 0;
+  overflow-y: auto;
+}
+
+.menu-title {
+  color: var(--text-light);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0 25px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.menu-item {
+  padding: 12px 25px;
+  display: flex;
+  align-items: center;
+  color: var(--text-light);
+  text-decoration: none;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item.active {
+  background-color: rgba(42, 157, 143, 0.1);
+  color: var(--primary);
+  border-left: 3px solid var(--primary);
+}
+
+.menu-item i {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+}
+
+/* Contenido Principal */
+.main-content {
+  margin-left: 250px;
+  margin-top: 60px;
+  padding: 25px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--primary);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-light);
+  padding: 5px;
+}
+
+.close-btn:hover {
+  color: var(--error);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.info-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.info-group label {
+  font-weight: 600;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.info-group span {
+  color: var(--text);
+  font-size: 16px;
+}
+</style>

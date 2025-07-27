@@ -48,7 +48,7 @@
             <option value="" disabled>Seleccione un responsable</option>
             <option v-for="usuario in usuarios" 
                     :key="usuario.id" 
-                    :value="usuario.id">
+                    :value="usuario.nombres + ' ' + usuario.apellidos">
               {{ usuario.nombres }} {{ usuario.apellidos }} - {{ usuario.rol }}
             </option>
           </select>

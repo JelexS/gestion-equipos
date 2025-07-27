@@ -27,8 +27,8 @@
       </router-link>
       
       <div class="menu-title">Equipos</div>
-      <router-link to="/equipos/lista" class="menu-item" active-class="active">
-        <i class="fas fa-list"></i> Ver Equipos
+      <router-link to="/solicitud-equipos" class="menu-item" active-class="active">
+        <i class="fas fa-hand-holding"></i> Solicitar Equipos
       </router-link>
       
       <div class="menu-title">Mi Perfil</div>

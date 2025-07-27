@@ -190,7 +190,7 @@
         </div>
       </div>
 
-      <!-- Modal de Reporte de Problema -->
+      <!-- Modal Reportar Problema -->
       <div v-if="showReportModal" class="modal-overlay" @click="closeReportModal">
         <div class="modal-content report-modal" @click.stop>
           <div class="modal-header">
@@ -199,50 +199,86 @@
               <i class="fas fa-times"></i>
             </button>
           </div>
+
           <div class="modal-body">
             <form @submit.prevent="submitReport">
               <div class="form-group">
                 <label>Equipo:</label>
-                <input type="text" :value="reportEquipo?.id + ' - ' + reportEquipo?.tipo" readonly>
+                <input 
+                  type="text" 
+                  :value="reportEquipo?.id + ' - ' + reportEquipo?.tipo" 
+                  class="form-control" 
+                  readonly
+                >
               </div>
+
               <div class="form-group">
-                <label>Tipo de Problema:</label>
-                <select v-model="reportForm.tipo" required>
+                <label>Tipo de Problema: *</label>
+                <select 
+                  v-model="reportForm.tipo"
+                  :class="{'form-control': true, 'is-invalid': reportErrors.tipo}"
+                >
                   <option value="">Seleccionar...</option>
                   <option value="hardware">Problema de Hardware</option>
                   <option value="software">Problema de Software</option>
                   <option value="red">Problema de Red/Conectividad</option>
                   <option value="otro">Otro</option>
                 </select>
+                <span class="error-message" v-if="reportErrors.tipo">
+                  {{ reportErrors.tipo }}
+                </span>
               </div>
+
               <div class="form-group">
-                <label>Descripción del Problema:</label>
+                <label>Descripción del Problema: *</label>
                 <textarea 
-                  v-model="reportForm.descripcion" 
-                  rows="4" 
+                  v-model="reportForm.descripcion"
+                  :class="{'form-control': true, 'is-invalid': reportErrors.descripcion}"
+                  rows="4"
                   placeholder="Describe detalladamente el problema..."
-                  required
                 ></textarea>
+                <div class="description-counter" :class="{ 'text-danger': reportForm.descripcion.length > 500 }">
+                  {{ reportForm.descripcion.length }}/500
+                </div>
+                <span class="error-message" v-if="reportErrors.descripcion">
+                  {{ reportErrors.descripcion }}
+                </span>
               </div>
+
               <div class="form-group">
-                <label>Urgencia:</label>
-                <select v-model="reportForm.urgencia" required>
+                <label>Urgencia: *</label>
+                <select 
+                  v-model="reportForm.urgencia"
+                  :class="{'form-control': true, 'is-invalid': reportErrors.urgencia}"
+                >
                   <option value="">Seleccionar...</option>
                   <option value="baja">Baja</option>
                   <option value="media">Media</option>
                   <option value="alta">Alta</option>
                   <option value="critica">Crítica</option>
                 </select>
+                <span class="error-message" v-if="reportErrors.urgencia">
+                  {{ reportErrors.urgencia }}
+                </span>
               </div>
             </form>
           </div>
+
           <div class="modal-footer">
-            <button class="btn-outline" @click="closeReportModal">
+            <button 
+              class="btn-outline" 
+              @click="closeReportModal"
+              :disabled="isSubmitting"
+            >
               Cancelar
             </button>
-            <button class="btn-primary" @click="submitReport" :disabled="!canSubmitReport">
-              <i class="fas fa-paper-plane"></i>
-              Enviar Reporte
+            <button 
+              class="btn-primary" 
+              @click="submitReport"
+              :disabled="isSubmitting"
+            >
+              <i class="fas" :class="isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
+              {{ isSubmitting ? 'Enviando...' : 'Enviar Reporte' }}
             </button>
           </div>
         </div>
@@ -259,6 +295,9 @@ import UserLayout from '@/components/layout/UserLayout.vue'
 
 const authStore = useAuthStore()
 const equiposStore = useEquiposStore()
+
+const reportErrors = ref({})
+const isSubmitting = ref(false)
 
 // Estados reactivos
 const searchTerm = ref('')
@@ -314,9 +353,6 @@ const filteredEquipos = computed(() => {
   return equipos
 })
 
-const canSubmitReport = computed(() => {
-  return reportForm.tipo && reportForm.descripcion && reportForm.urgencia
-})
 
 // Métodos
 const getEquipoIcon = (tipo) => {
@@ -377,24 +413,62 @@ const closeReportModal = () => {
   reportEquipo.value = null
 }
 
-const submitReport = () => {
-  if (!canSubmitReport.value) return
+const submitReport = async () => {
+  try {
+    // Reset errors
+    reportErrors.value = {}
+    
+    // Validate fields
+    if (!reportForm.tipo) {
+      reportErrors.value.tipo = 'Seleccione el tipo de problema'
+    }
 
-  // Simulación de envío de reporte
-  const report = {
-    equipoId: reportEquipo.value.id,
-    usuario: authStore.user.email,
-    fecha: new Date().toISOString(),
-    ...reportForm
+    if (!reportForm.descripcion) {
+      reportErrors.value.descripcion = 'La descripción es requerida'
+    } else if (reportForm.descripcion.length < 10) {
+      reportErrors.value.descripcion = 'La descripción debe tener al menos 10 caracteres'
+    } else if (reportForm.descripcion.length > 500) {
+      reportErrors.value.descripcion = 'La descripción no debe exceder los 500 caracteres'
+    }
+
+    if (!reportForm.urgencia) {
+      reportErrors.value.urgencia = 'Seleccione el nivel de urgencia'
+    }
+
+    // If there are errors, stop submission
+    if (Object.keys(reportErrors.value).length > 0) {
+      return
+    }
+
+    isSubmitting.value = true
+
+    // Create report object
+    const report = {
+      id: `REP-${Date.now()}`,
+      equipoId: reportEquipo.value.id,
+      usuario: authStore.user.email,
+      fecha: new Date().toISOString(),
+      estado: 'pendiente',
+      ...reportForm
+    }
+
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    // Save to localStorage
+    const reports = JSON.parse(localStorage.getItem('uleam_reportes') || '[]')
+    reports.push(report)
+    localStorage.setItem('uleam_reportes', JSON.stringify(reports))
+
+    // Show success message
+    alert('Reporte enviado exitosamente. El equipo de soporte se pondrá en contacto contigo.')
+    closeReportModal()
+  } catch (error) {
+    console.error('Error al enviar reporte:', error)
+    alert('Error al enviar el reporte. Por favor, intente nuevamente.')
+  } finally {
+    isSubmitting.value = false
   }
-
-  // Guardar en localStorage (simulación)
-  const reports = JSON.parse(localStorage.getItem('uleam_reportes') || '[]')
-  reports.push(report)
-  localStorage.setItem('uleam_reportes', JSON.stringify(reports))
-
-  alert('Reporte enviado exitosamente. El equipo de soporte se pondrá en contacto contigo.')
-  closeReportModal()
 }
 </script>
 
@@ -733,5 +807,35 @@ const submitReport = () => {
     width: 95%;
     margin: 10px;
   }
+}
+
+/* Add to your existing <style scoped> section */
+
+.form-control.is-invalid {
+  border-color: #dc3545;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 4px;
+  display: block;
+}
+
+.description-counter {
+  font-size: 0.75rem;
+  color: #6c757d;
+  text-align: right;
+  margin-top: 4px;
+}
+
+.text-danger {
+  color: #dc3545;
+}
+
+.btn-primary:disabled,
+.btn-outline:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 </style>

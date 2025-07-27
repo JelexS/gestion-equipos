@@ -13,6 +13,7 @@ import ListaUsuarios from '@/views/usuarios/ListaUsuarios.vue'
 
 // Vista para usuarios normales
 import InventarioUsuario from '@/views/usuario/InventarioUsuario.vue'
+import SolicitudEquipos from '@/views/usuario/SolicitudEquipos.vue'
 
 const routes = [
   {
@@ -38,6 +39,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+  path: '/solicitud-equipos',
+  name: 'SolicitudEquipos',
+  component: SolicitudEquipos,
+  meta: { requiresAuth: true }
+  },
+  {
     path: '/equipos/registrar',
     name: 'RegistrarEquipo',
     component: RegistrarEquipo,
@@ -47,7 +54,7 @@ const routes = [
     path: '/equipos/lista',
     name: 'ListaEquipos',
     component: ListaEquipos,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresAdmin: true }
   },
   {
     path: '/equipos/asignar',

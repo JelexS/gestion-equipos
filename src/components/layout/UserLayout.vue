@@ -3,7 +3,7 @@
     <!-- Navegación Superior -->
     <nav class="top-nav">
       <div class="logo-container">
-        <img src="/img/logo-uleam.png" alt="Logo ULEAM" class="logo">
+        <img src="../../assets/img/logo-uleam.png" alt="Logo ULEAM" class="logo">
         <span class="logo-text">Sistema de Inventario - Usuario</span>
       </div>
       
@@ -80,7 +80,6 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-
 const router = useRouter()
 const authStore = useAuthStore()
 const showProfileModal = ref(false)

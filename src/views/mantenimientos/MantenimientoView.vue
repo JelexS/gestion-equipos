@@ -241,11 +241,26 @@ const registrarMantenimiento = async () => {
       throw new Error('Por favor, corrija los errores en el formulario')
     }
 
-    const success = await mantenimientosStore.agregarMantenimiento({
+    // Create the maintenance record with all required fields
+    const nuevoMantenimiento = {
       ...mantenimiento.value,
       fechaCreacion: new Date().toISOString(),
-      estado: 'pendiente'
+      estado: 'pendiente',
+      fechaFinalizacion: null,
+      costoFinal: null
+    }
+
+    // First update the equipment status
+    const equipoActualizado = await equiposStore.updateEquipo(mantenimiento.value.equipoId, {
+      estado: 'en-mantenimiento'
     })
+
+    if (!equipoActualizado) {
+      throw new Error('Error al actualizar el estado del equipo')
+    }
+
+    // Then register the maintenance
+    const success = await mantenimientosStore.agregarMantenimiento(nuevoMantenimiento)
 
     if (success) {
       mensaje.value = {
@@ -259,8 +274,9 @@ const registrarMantenimiento = async () => {
   } catch (error) {
     mensaje.value = {
       tipo: 'error',
-      texto: error.message
+      texto: error.message || 'Error al registrar el mantenimiento'
     }
+    console.error('Error en registrarMantenimiento:', error)
   }
 }
 

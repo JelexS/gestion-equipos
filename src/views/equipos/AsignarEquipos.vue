@@ -12,16 +12,33 @@
         <fieldset class="form-section">
           <legend><i class="fas fa-user-tag"></i> Datos de Asignación</legend>
                   <!-- Selector de equipo -->
+        <!-- Replace the single equipment selector with this multiple selector -->
         <div class="form-group">
-          <label>Equipo a asignar: *</label>
-          <select v-model="equipoSeleccionado" class="form-control">
-            <option value="" disabled>Seleccione un equipo</option>
-            <option v-for="equipo in equiposDisponibles" 
-                    :key="equipo.id" 
-                    :value="equipo.id">
-              {{ equipo.id }} - {{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }}
-            </option>
-          </select>
+          <label>Equipos a asignar: *</label>
+          <div class="equipos-selector">
+            <div class="selected-equipos" v-if="equiposSeleccionados.length > 0">
+              <div v-for="equipoId in equiposSeleccionados" 
+                  :key="equipoId" 
+                  class="equipo-tag">
+                {{ getEquipoInfo(equipoId) }}
+                <button type="button" 
+                        class="remove-equipo" 
+                        @click="removeEquipo(equipoId)">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+            <select v-model="equipoTemporal" 
+                    class="form-control"
+                    @change="addEquipo">
+              <option value="">Seleccione equipos...</option>
+              <option v-for="equipo in equiposDisponiblesFiltrados" 
+                      :key="equipo.id" 
+                      :value="equipo.id">
+                {{ equipo.id }} - {{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }}
+              </option>
+            </select>
+          </div>
         </div>
 
         <!-- Responsable -->
@@ -32,7 +49,7 @@
             <option v-for="usuario in usuarios" 
                     :key="usuario.id" 
                     :value="usuario.id">
-              {{ usuario.nombres }} {{ usuario.apellidos }}
+              {{ usuario.nombres }} {{ usuario.apellidos }} - {{ usuario.rol }}
             </option>
           </select>
         </div>
@@ -93,7 +110,8 @@ const equiposStore = useEquiposStore()
 const usuariosStore = useUsuariosStore()
 
 // Estado del formulario
-const equipoSeleccionado = ref('')
+const equiposSeleccionados = ref([])
+const equipoTemporal = ref('')
 const asignacion = ref({
   responsable: '',
   ubicacion: '',
@@ -103,12 +121,27 @@ const asignacion = ref({
 const mensaje = ref(null)
 
 // Computed properties
-const equiposDisponibles = computed(() => {
+const equiposDisponiblesFiltrados = computed(() => {
   return equiposStore.equipos.filter(equipo => 
-    equipo.estado === 'disponible' || equipo.estado === 'activo'
+    (equipo.estado === 'disponible' || equipo.estado === 'activo') &&
+    !equiposSeleccionados.value.includes(equipo.id)
   )
 })
 
+const getEquipoInfo = (equipoId) => {
+  const equipo = equiposStore.equipos.find(e => e.id === equipoId)
+  return equipo ? `${equipo.id} - ${equipo.tipo}` : equipoId
+}
+
+const addEquipo = () => {
+  if (equipoTemporal.value && !equiposSeleccionados.value.includes(equipoTemporal.value)) {
+    equiposSeleccionados.value.push(equipoTemporal.value)
+    equipoTemporal.value = ''
+  }
+}
+const removeEquipo = (equipoId) => {
+  equiposSeleccionados.value = equiposSeleccionados.value.filter(id => id !== equipoId)
+}
 const usuarios = computed(() => {
   return usuariosStore.usuarios
 })
@@ -122,31 +155,35 @@ const fechaMinima = computed(() => {
 const asignarEquipo = async () => {
   try {
     // Validaciones
-    if (!equipoSeleccionado.value || !asignacion.value.responsable) {
-      throw new Error('Debe seleccionar un equipo y un responsable')
+    if (equiposSeleccionados.value.length === 0 || !asignacion.value.responsable) {
+      throw new Error('Debe seleccionar al menos un equipo y un responsable')
     }
 
     if (!asignacion.value.ubicacion.trim()) {
       throw new Error('La ubicación es requerida')
     }
 
-    // Actualizar el equipo
-    const success = equiposStore.updateEquipo(equipoSeleccionado.value, {
-      estado: 'asignado',
-      responsable: asignacion.value.responsable,
-      ubicacion: asignacion.value.ubicacion,
-      fechaAsignacion: asignacion.value.fechaAsignacion,
-      observaciones: asignacion.value.observaciones
-    })
+    // Asignar múltiples equipos
+    const results = await Promise.all(
+      equiposSeleccionados.value.map(equipoId => 
+        equiposStore.updateEquipo(equipoId, {
+          estado: 'asignado',
+          responsable: asignacion.value.responsable,
+          ubicacion: asignacion.value.ubicacion,
+          fechaAsignacion: asignacion.value.fechaAsignacion,
+          observaciones: asignacion.value.observaciones
+        })
+      )
+    )
 
-    if (success) {
+    if (results.every(success => success)) {
       mensaje.value = {
         tipo: 'success',
-        texto: 'Equipo asignado correctamente'
+        texto: `${equiposSeleccionados.value.length} equipos asignados correctamente`
       }
       limpiarFormulario()
     } else {
-      throw new Error('Error al asignar el equipo')
+      throw new Error('Error al asignar algunos equipos')
     }
   } catch (error) {
     mensaje.value = {
@@ -157,7 +194,8 @@ const asignarEquipo = async () => {
 }
 
 const limpiarFormulario = () => {
-  equipoSeleccionado.value = ''
+  equiposSeleccionados.value = []
+  equipoTemporal.value = ''
   asignacion.value = {
     responsable: '',
     ubicacion: '',
@@ -279,5 +317,55 @@ const limpiarFormulario = () => {
   background: #f8d7da;
   color: #721c24;
   border: 1px solid #f5c6cb;
+}
+
+
+
+.equipos-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.selected-equipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 45px;
+}
+
+.equipo-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--primary);
+  color: white;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.remove-equipo {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+}
+
+.remove-equipo:hover {
+  opacity: 1;
+}
+
+.selected-count {
+  margin-top: 5px;
+  font-size: 14px;
+  color: var(--text-light);
 }
 </style>

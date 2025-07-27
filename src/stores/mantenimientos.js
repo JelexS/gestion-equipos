@@ -66,9 +66,10 @@ export const useMantenimientosStore = defineStore('mantenimientos', () => {
 
   const agregarMantenimiento = async (mantenimiento) => {
     try {
-      // Validar que el equipo existe
-      const equipo = equiposStore.equipos.value.find(e => e.id === mantenimiento.equipoId)
-      if (!equipo) throw new Error('Equipo no encontrado')
+    // Validate required fields
+      if (!mantenimiento.equipoId || !mantenimiento.tipo || !mantenimiento.descripcion) {
+        throw new Error('Faltan campos requeridos')
+      }
 
       // Crear nuevo registro de mantenimiento
       const nuevoMantenimiento = {

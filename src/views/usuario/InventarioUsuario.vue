@@ -113,27 +113,27 @@
                 <h4>Información General</h4>
                 <div class="detail-grid">
                   <div class="detail-item-full">
-                    <label>ID:</label>
+                    <label>ID: </label>
                     <span>{{ selectedEquipo.id }}</span>
                   </div>
                   <div class="detail-item-full">
-                    <label>Tipo:</label>
+                    <label>Tipo: </label>
                     <span>{{ selectedEquipo.tipo }}</span>
                   </div>
                   <div class="detail-item-full">
-                    <label>Marca:</label>
+                    <label>Marca: </label>
                     <span>{{ selectedEquipo.marca }}</span>
                   </div>
                   <div class="detail-item-full">
-                    <label>Modelo:</label>
+                    <label>Modelo: </label>
                     <span>{{ selectedEquipo.modelo }}</span>
                   </div>
                   <div class="detail-item-full">
-                    <label>Serial:</label>
+                    <label>Serial: </label>
                     <span>{{ selectedEquipo.serial }}</span>
                   </div>
                   <div class="detail-item-full">
-                    <label>Estado:</label>
+                    <label>Estado: </label>
                     <span :class="'status-badge ' + selectedEquipo.estado">
                       {{ getEstadoText(selectedEquipo.estado) }}
                     </span>
@@ -145,15 +145,15 @@
                 <h4>Especificaciones Técnicas</h4>
                 <div class="detail-grid">
                   <div class="detail-item-full" v-if="selectedEquipo.procesador">
-                    <label>Procesador:</label>
+                    <label>Procesador: </label>
                     <span>{{ selectedEquipo.procesador }}</span>
                   </div>
                   <div class="detail-item-full" v-if="selectedEquipo.ram">
-                    <label>RAM:</label>
+                    <label>RAM: </label>
                     <span>{{ selectedEquipo.ram }} GB</span>
                   </div>
                   <div class="detail-item-full" v-if="selectedEquipo.almacenamiento">
-                    <label>Almacenamiento:</label>
+                    <label>Almacenamiento: </label>
                     <span>{{ selectedEquipo.almacenamiento }}</span>
                   </div>
                 </div>
@@ -163,15 +163,15 @@
                 <h4>Información de Asignación</h4>
                 <div class="detail-grid">
                   <div class="detail-item-full">
-                    <label>Ubicación:</label>
+                    <label>Ubicación: </label>
                     <span>{{ selectedEquipo.ubicacion }}</span>
                   </div>
                   <div class="detail-item-full">
-                    <label>Fecha de Asignación:</label>
+                    <label>Fecha de Asignación: </label>
                     <span>{{ formatDate(selectedEquipo.fechaAsignacion) }}</span>
                   </div>
                   <div class="detail-item-full" v-if="selectedEquipo.observaciones">
-                    <label>Observaciones:</label>
+                    <label>Observaciones: </label>
                     <span>{{ selectedEquipo.observaciones }}</span>
                   </div>
                 </div>
@@ -274,13 +274,15 @@ const reportForm = reactive({
   urgencia: ''
 })
 
-// Computed properties
+// Reemplazar el computed property misEquipos con:
 const misEquipos = computed(() => {
-  const userName = `${authStore.user?.nombres} ${authStore.user?.apellidos}`
+  if (!authStore.user) return []
+
   return equiposStore.equipos.filter(equipo => 
-    equipo.responsable === userName || 
-    equipo.responsable.includes(authStore.user?.nombres) ||
-    equipo.responsable.includes(authStore.user?.apellidos)
+    // Verificar si el equipo está asignado al usuario actual
+    equipo.responsable === authStore.user.id ||
+    equipo.responsableId === authStore.user.id ||
+    (equipo.estado === 'asignado' && equipo.responsable === authStore.user.email)
   )
 })
 
@@ -342,9 +344,17 @@ const getEstadoText = (estado) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return 'No asignado'
-  return new Date(dateString).toLocaleDateString('es-ES')
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  } catch (error) {
+    return 'Fecha inválida'
+  }
 }
-
 const showEquipoDetails = (equipo) => {
   selectedEquipo.value = equipo
 }
@@ -387,3 +397,341 @@ const submitReport = () => {
   closeReportModal()
 }
 </script>
+
+<style scoped>
+.user-dashboard {
+  padding: 20px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 60px);
+}
+
+/* Welcome Header Styles */
+.welcome-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.welcome-text h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 24px;
+}
+
+.welcome-text p {
+  margin: 5px 0 0;
+  color: #7f8c8d;
+}
+
+.user-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 10px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.stat-number {
+  display: block;
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+/* Filters Section */
+.filters-section {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-input,
+.filter-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.search-input:focus,
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+/* Equipment Grid */
+.equipos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.equipo-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.equipo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.equipo-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.equipo-icon {
+  width: 40px;
+  height: 40px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.equipo-info h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #2c3e50;
+}
+
+.equipo-info p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.activo { background: #28a745; color: white; }
+.status-badge.en-mantenimiento { background: #ffc107; color: #000; }
+.status-badge.dañado { background: #dc3545; color: white; }
+.status-badge.asignado { background: #17a2b8; color: white; }
+
+.equipo-details {
+  margin: 15px 0;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.detail-item i {
+  width: 16px;
+}
+
+.equipo-actions {
+  margin-top: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-outline {
+  padding: 8px 16px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* No Equipment Message */
+.no-equipos {
+  text-align: center;
+  padding: 40px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.no-equipos-icon {
+  font-size: 48px;
+  color: #dee2e6;
+  margin-bottom: 20px;
+}
+
+.no-equipos h3 {
+  margin: 0;
+  color: #2c3e50;
+}
+
+.no-equipos p {
+  margin: 10px 0 0;
+  color: #6c757d;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #6c757d;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid #dee2e6;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Report Form Styles */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.btn-primary {
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .welcome-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .user-stats {
+    margin-top: 20px;
+  }
+
+  .filters-section {
+    flex-direction: column;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .equipos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 10px;
+  }
+}
+</style>

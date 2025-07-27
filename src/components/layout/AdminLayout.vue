@@ -8,6 +8,10 @@
       </div>
       
       <div class="user-menu">
+          <div class="user-info">
+            <span class="user-name">{{ authStore.user?.nombres }} {{ authStore.user?.apellidos }}</span>
+          <span class="user-role">{{ getRoleName(authStore.user?.rol) }}</span>
+        </div>
         <div class="user-avatar">{{ userInitial }}</div>
         <button class="logout-btn" @click="handleLogout">
           <i class="fas fa-sign-out-alt"></i> Cerrar sesión
@@ -70,6 +74,17 @@ const handleLogout = () => {
   authStore.logout()
   router.push('/login')
 }
+
+const getRoleName = (role) => {
+  switch (role) {
+    case 'admin':
+      return 'Administrador'
+    case 'user':
+      return 'Usuario'
+    default:
+      return 'Invitado'
+  }
+}
 </script>
 
 <style scoped>
@@ -112,6 +127,22 @@ const handleLogout = () => {
   display: flex;
   align-items: center;
   padding-right: 3%;
+  gap: 15px;
+}
+.user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+.user-name {
+  font-weight: 600;
+  color: var(--secondary);
+  font-size: 14px;
+}
+
+.user-role {
+  font-size: 12px;
+  color: var(--text-light);
 }
 
 .user-avatar {

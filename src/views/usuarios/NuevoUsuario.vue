@@ -95,7 +95,7 @@
             <option value="" disabled>Sin asignar</option>
             <option v-for="facultad in facultades" 
                     :key="facultad.id" 
-                    :value="facultad.id">
+                    :value="facultad.nombre">
               {{ facultad.nombre }}
             </option>
           </select>
@@ -131,7 +131,7 @@
           <button type="button" class="btn btn-secondary" @click="cancelar">
             <i class="fas fa-times"></i> Cancelar
           </button>
-          <button type="submit" class="btn btn-primary" :disabled="!isFormValid">
+          <button type="submit" class="btn btn-primary">
             <i class="fas fa-save"></i> Guardar Usuario
           </button>
         </div>

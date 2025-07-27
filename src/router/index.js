@@ -23,7 +23,7 @@ const routes = [
     path: '/login',
     name: 'LoginView',
     component: Login,
-    meta: { requiresGuest: false }
+    meta: { requiresGuest: true }
   },
   {
     path: '/dashboard',

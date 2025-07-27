@@ -258,6 +258,83 @@
         </div>
       </div>
     </div>
+
+        <!-- Add this modal before closing AdminLayout -->
+    <div v-if="editingEquipo" class="modal-overlay" @click="cancelarEdicion">
+      <div class="modal-content edit-modal" @click.stop>
+        <div class="modal-header">
+          <h3><i class="fas fa-edit"></i> Editar Equipo</h3>
+          <button class="close-btn" @click="cancelarEdicion">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <form @submit.prevent="guardarEdicion" class="edit-form">
+            <!-- Estado -->
+            <div class="form-group">
+              <label>Estado:</label>
+              <select v-model="editingEquipo.estado" class="form-control">
+                <option value="activo">Activo</option>
+                <option value="disponible">Disponible</option>
+                <option value="en-mantenimiento">En Mantenimiento</option>
+                <option value="dañado">Dañado</option>
+                <option value="asignado">Asignado</option>
+              </select>
+            </div>
+
+            <!-- Ubicación -->
+            <div class="form-group">
+              <label>Ubicación:</label>
+              <input 
+                type="text" 
+                v-model="editingEquipo.ubicacion" 
+                class="form-control"
+                placeholder="Ingrese la ubicación">
+            </div>
+
+            <!-- Responsable -->
+            <div class="form-group">
+              <label>Responsable:</label>
+              <div class="responsable-control">
+                <input 
+                  type="text" 
+                  v-model="editingEquipo.responsable" 
+                  class="form-control"
+                  placeholder="Seleccione o limpie el responsable"
+                  disabled>
+                <button 
+                  type="button" 
+                  class="btn btn-outline btn-small"
+                  @click="liberarEquipo"
+                  v-if="editingEquipo.responsable">
+                  <i class="fas fa-user-minus"></i> Quitar Responsable
+                </button>
+              </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="form-group">
+              <label>Observaciones:</label>
+              <textarea 
+                v-model="editingEquipo.observaciones" 
+                class="form-control"
+                rows="3"
+                placeholder="Agregue observaciones sobre el equipo"></textarea>
+            </div>
+          </form>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-outline" @click="cancelarEdicion">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" @click="guardarEdicion">
+            <i class="fas fa-save"></i> Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
   </AdminLayout>
 </template>
 
@@ -380,12 +457,48 @@ const verDetalles = (equipo) => {
   selectedEquipo.value = equipo
 }
 
+// Add to existing refs
+const editingEquipo = ref(null)
+
+// Replace the existing editarEquipo method
 const editarEquipo = (equipo) => {
-  // Implementar edición de equipo
-  alert(`Editar equipo ${equipo.id} (funcionalidad por implementar)`)
-  cerrarModal()
+  editingEquipo.value = { ...equipo }
+  selectedEquipo.value = null
 }
 
+// Add these new methods
+const cancelarEdicion = () => {
+  editingEquipo.value = null
+}
+
+const liberarEquipo = () => {
+  if (editingEquipo.value) {
+    editingEquipo.value.responsable = null
+    editingEquipo.value.estado = 'disponible'
+  }
+}
+
+const guardarEdicion = async () => {
+  try {
+    if (!editingEquipo.value) return
+
+    const success = await equiposStore.updateEquipo(editingEquipo.value.id, {
+      estado: editingEquipo.value.estado,
+      ubicacion: editingEquipo.value.ubicacion,
+      responsable: editingEquipo.value.responsable,
+      observaciones: editingEquipo.value.observaciones
+    })
+
+    if (success) {
+      alert('Equipo actualizado exitosamente')
+      cancelarEdicion()
+    } else {
+      throw new Error('Error al actualizar el equipo')
+    }
+  } catch (error) {
+    alert(error.message)
+  }
+}
 const confirmarEliminacion = (equipo) => {
   equipoToDelete.value = equipo
 }
@@ -781,5 +894,55 @@ const downloadCSV = (content, filename) => {
   .equipos-table {
     min-width: 800px;
   }
+}
+
+
+.edit-modal {
+  max-width: 500px;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-control {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.form-control:disabled {
+  background-color: #f5f5f5;
+}
+
+.responsable-control {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.btn-small {
+  padding: 4px 8px;
+  font-size: 12px;
 }
 </style>

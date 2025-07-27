@@ -155,30 +155,36 @@ export const useEquiposStore = defineStore('equipos', () => {
     return false
   }
 
-  const asignarEquipos = (equipoIds, asignacion) => {
-    const equiposAsignados = []
-    
-    equipoIds.forEach(id => {
-      const equipo = equipos.value.find(e => e.id === id)
-      if (equipo && equipo.disponible) {
-        const updates = {
-          estado: 'asignado',
-          disponible: false,
-          responsable: asignacion.responsable,
-          ubicacion: asignacion.ubicacion,
-          fechaAsignacion: asignacion.fecha,
-          observaciones: asignacion.comentarios || equipo.observaciones
-        }
-        
-        const updated = updateEquipo(id, updates)
-        if (updated) {
-          equiposAsignados.push(updated)
-        }
+  const asignarEquipos = (equipoId, asignacion) => {
+    try {
+      const equipo = equipos.value.find(e => e.id === equipoId)
+      if (!equipo) return false
+
+      const equipoActualizado = {
+        ...equipo,
+        estado: 'asignado',
+        disponible: false,
+        responsable: asignacion.responsable, // ID del usuario
+        responsableId: asignacion.responsable, // ID del usuario (redundante para compatibilidad)
+        responsableEmail: asignacion.email, // Email del usuario si está disponible
+        ubicacion: asignacion.ubicacion,
+        fechaAsignacion: new Date().toISOString(),
+        observaciones: asignacion.observaciones || ''
       }
-    })
-    
-    return equiposAsignados
+
+      const index = equipos.value.findIndex(e => e.id === equipoId)
+      if (index !== -1) {
+        equipos.value[index] = equipoActualizado
+        saveToStorage()
+        return true
+      }
+
+      return false
+    } catch (error) {
+    console.error('Error al asignar equipo:', error)
+    return false
   }
+}
 
   const liberarEquipo = (id) => {
     return updateEquipo(id, {

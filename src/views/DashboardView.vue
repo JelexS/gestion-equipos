@@ -36,12 +36,12 @@
         <p>Registrar nuevos usuarios en el sistema</p>
       </div>
       
-      <div class="quick-card" @click="navigateTo('/reportes/estadisticas')">
+      <div class="quick-card" @click="navigateTo('/mantenimientos')">
         <div class="icon">
-          <i class="fas fa-chart-pie"></i>
+          <i class="fas fa-clipboard-list"></i>
         </div>
-        <h3>Ver Reportes</h3>
-        <p>Generar reportes estadísticos del inventario</p>
+        <h3>Agregar Mantenimiento</h3>
+        <p>Aplicar mantenimiento a equipos de ser necesario</p>
       </div>
     </div>
     

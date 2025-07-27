@@ -19,7 +19,7 @@
       </div>
     </nav>
 
-    <!-- Panel Lateral Simplificado -->
+    <!-- Panel Lateral -->
     <aside class="sidebar">
       <div class="menu-title">Menú Principal</div>
       <router-link to="/inventario-usuario" class="menu-item" active-class="active">

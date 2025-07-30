@@ -11,12 +11,13 @@
 
         <fieldset class="form-section">
           <legend><i class="fas fa-user-tag"></i> Datos de Asignación</legend>
-                  <!-- Selector de equipo -->
-        <!-- Replace the single equipment selector with this multiple selector -->
+        <!-- Equipos a asignar -->
         <div class="form-group">
           <label>Equipos a asignar: *</label>
           <div class="equipos-selector">
-            <div class="selected-equipos" v-if="equiposSeleccionados.length > 0">
+            <div class="selected-equipos" 
+                 :class="{ 'error-border': errors.equipos }"
+                 v-if="equiposSeleccionados.length > 0">
               <div v-for="equipoId in equiposSeleccionados" 
                   :key="equipoId" 
                   class="equipo-tag">
@@ -29,7 +30,7 @@
               </div>
             </div>
             <select v-model="equipoTemporal" 
-                    class="form-control"
+                    :class="{'form-control': true, 'error': errors.equipos}"
                     @change="addEquipo">
               <option value="">Seleccione equipos...</option>
               <option v-for="equipo in equiposDisponiblesFiltrados" 
@@ -38,13 +39,17 @@
                 {{ equipo.id }} - {{ equipo.tipo }} {{ equipo.marca }} {{ equipo.modelo }}
               </option>
             </select>
+            <span class="error-message" v-if="errors.equipos">
+              {{ errors.equipos }}
+            </span>
           </div>
         </div>
 
         <!-- Responsable -->
         <div class="form-group">
           <label>Responsable: *</label>
-          <select v-model="asignacion.responsable" class="form-control">
+          <select v-model="asignacion.responsable" 
+                  :class="{'form-control': true, 'error': errors.responsable}">
             <option value="" disabled>Seleccione un responsable</option>
             <option v-for="usuario in usuarios" 
                     :key="usuario.id" 
@@ -52,25 +57,33 @@
               {{ usuario.nombres }} {{ usuario.apellidos }} - {{ usuario.rol }}
             </option>
           </select>
+          <span class="error-message" v-if="errors.responsable">
+            {{ errors.responsable }}
+          </span>
         </div>
 
         <!-- Ubicación -->
         <div class="form-group">
-          <label>Ubicación física:</label>
+          <label>Ubicación física: *</label>
           <input type="text" 
                  v-model="asignacion.ubicacion"  
-                 class="form-control"
+                 :class="{'form-control': true, 'error': errors.ubicacion}"
                  placeholder="Ej: Facultad de Ingeniería - Lab 101">
+          <span class="error-message" v-if="errors.ubicacion">
+            {{ errors.ubicacion }}
+          </span>
         </div>
 
         <!-- Fecha de asignación -->
         <div class="form-group">
-          <label>Fecha de asignación:</label>
+          <label>Fecha de asignación: *</label>
           <input type="date" 
-                 v-model="asignacion.fechaAsignacion" 
-                 
-                 class="form-control"
-                 :min="fechaMinima">
+                v-model="asignacion.fechaAsignacion" 
+                :class="{'form-control': true, 'error': errors.fechaAsignacion}"
+                :min="fechaMinima">
+          <span class="error-message" v-if="errors.fechaAsignacion">
+            {{ errors.fechaAsignacion }}
+          </span>
         </div>
 
         <!-- Observaciones -->
@@ -119,6 +132,7 @@ const asignacion = ref({
   observaciones: ''
 })
 const mensaje = ref(null)
+const errors = ref({})
 
 // Computed properties
 const equiposDisponiblesFiltrados = computed(() => {
@@ -148,19 +162,50 @@ const usuarios = computed(() => {
 
 const fechaMinima = computed(() => {
   const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0) // Reset time to start of day
   return hoy.toISOString().split('T')[0]
 })
 
 // Métodos
 const asignarEquipo = async () => {
   try {
-    // Validaciones
-    if (equiposSeleccionados.value.length === 0 || !asignacion.value.responsable) {
-      throw new Error('Debe seleccionar al menos un equipo y un responsable')
+    // Reset errors
+    errors.value = {}
+    let hasErrors = false
+
+    // Validate equipments
+    if (equiposSeleccionados.value.length === 0) {
+      errors.value.equipos = 'Debe seleccionar al menos un equipo'
+      hasErrors = true
     }
 
-    if (!asignacion.value.ubicacion.trim()) {
-      throw new Error('La ubicación es requerida')
+    // Validate responsible
+    if (!asignacion.value.responsable) {
+      errors.value.responsable = 'Debe seleccionar un responsable'
+      hasErrors = true
+    }
+
+    // Validate location
+    if (!asignacion.value.ubicacion?.trim()) {
+      errors.value.ubicacion = 'La ubicación es requerida'
+      hasErrors = true
+    }
+     // Validate fecha asignación
+    if (!asignacion.value.fechaAsignacion) {
+      errors.value.fechaAsignacion = 'La fecha de asignación es requerida'
+      hasErrors = true
+    } else {
+      const fechaSeleccionada = new Date(asignacion.value.fechaAsignacion)
+      const hoy = new Date()
+      hoy.setHours(0, 0, 0, 0)
+      
+      if (fechaSeleccionada < hoy) {
+        errors.value.fechaAsignacion = 'La fecha no puede ser anterior a hoy'
+        hasErrors = true
+      }
+    }
+    if (hasErrors) {
+      return
     }
 
     // Asignar múltiples equipos
@@ -194,6 +239,7 @@ const asignarEquipo = async () => {
 }
 
 const limpiarFormulario = () => {
+  errors.value = {}
   equiposSeleccionados.value = []
   equipoTemporal.value = ''
   asignacion.value = {
@@ -367,5 +413,28 @@ const limpiarFormulario = () => {
   margin-top: 5px;
   font-size: 14px;
   color: var(--text-light);
+}
+
+.form-control.error {
+  border-color: var(--error, #dc3545);
+}
+
+.error-border {
+  border-color: var(--error, #dc3545);
+}
+
+.error-message {
+  color: var(--error, #dc3545);
+  font-size: 0.875rem;
+  margin-top: 4px;
+  display: block;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-control:focus.error {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
 }
 </style>

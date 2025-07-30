@@ -47,13 +47,6 @@
           {{ loginError }}
         </div>
       </form>
-
-      <!-- Credenciales de prueba -->
-      <div class="demo-credentials">
-        <h4>Credenciales de prueba:</h4>
-        <p><strong>Admin:</strong> admin@uleam.edu.ec / 123456</p>
-        <p><strong>Usuario:</strong> Crear desde el panel de admin</p>
-      </div>
     </div>
   </div>
 </template>
